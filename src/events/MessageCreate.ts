@@ -67,12 +67,16 @@ export class MessageCreate {
         const { ALLOWED_SERVER_IDS } = process.env;
         if (ALLOWED_SERVER_IDS && !ALLOWED_SERVER_IDS.split(',').some((item) => item === message.guild?.id.toString())) return;
 
+        const autoReplyChannels = process.env.AUTO_REPLY_CHANNEL_IDS?.split(',') ?? [];
+
         // Function to check whether the bot should respond to the message.
         const shouldRespond = () => {
             const excludedChannels = process.env.EXCLUDED_CHANNEL_IDS?.split(',') ?? [];
             if (excludedChannels.includes(message.channel.id)) return false;
 
-            if (message.mentions.users.size > 0 && !message.mentions.users.has(client.user!.id)) return false;
+            if (!autoReplyChannels.includes(message.channel.id)) {
+                if (message.mentions.users.size > 0 && !message.mentions.users.has(client.user!.id)) return false;
+            }
 
             const chance = Math.random();
             const regex = /^.{5,100}\?$/;
@@ -109,7 +113,7 @@ export class MessageCreate {
             } catch (e) {
                 console.error('Error fetching or processing the replied message:', e);
             }
-        } else if (message.mentions.has(`${client.user?.id}`)) {
+        } else if (message.mentions.has(`${client.user?.id}`) || autoReplyChannels.includes(message.channel.id)) {
             await processGPT(message.content, message.author, message);
         }
     }
