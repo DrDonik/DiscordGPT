@@ -27,7 +27,8 @@
     "keyv": "^5.1.2",
     "moment": "^2.30.1",
     "openai": "^4.68.1",
-    "systeminformation": "^5.23.5"
+    "systeminformation": "^5.23.5",
+    "yarn": "^1.22.22"
   },
   "devDependencies": {
     "@types/node": "^22.7.8",
