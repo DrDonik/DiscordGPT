@@ -1,11 +1,9 @@
 import {
     Client, Discord, Slash, SlashOption,
 } from 'discordx';
-import {
-    ApplicationCommandOptionType, codeBlock, CommandInteraction, Message,
-} from 'discord.js';
+import { ApplicationCommandOptionType, ChannelType, CommandInteraction } from 'discord.js';
 import { Category } from '@discordx/utilities';
-import { runGPT } from '../../utils/Util.js';
+import { handleGPTResponse, handleThreadCreation, runGPT } from '../../utils/Util.js';
 
 @Discord()
 @Category('Miscellaneous')
@@ -32,32 +30,17 @@ export class Ask {
     ) {
         await interaction.deferReply();
 
-        // Pass the options to run the 'runGPT' function
-        const response = await runGPT(query, interaction.user);
-
-        // If the response is boolean and true, then the user already has an ongoing query
-        if (typeof response === 'boolean' && response) {
-            return interaction.reply({ content: `You currently have an ongoing request. Please refrain from sending additional queries to avoid spamming ${client?.user}` });
-        }
-
-        if (response === query.replaceAll(/<@!?(\d+)>/g, '')) {
-            return interaction.reply({
-                content: `An error occurred, please report this to a member of our moderation team.\n
-                ${codeBlock('js', 'Error: Response was equal to query.')}`,
+        if (process.env.ENABLE_MESSAGE_THREADS === 'true' && interaction.guild && interaction.channel?.type === ChannelType.GuildText) {
+            await handleThreadCreation({
+                source: interaction,
+                client,
+                user: interaction.user,
+                query,
+                commandUsageChannel: process.env.COMMAND_USAGE_CHANNEL,
             });
-        }
-
-        // If response is an array of responses
-        if (Array.isArray(response)) {
-            await response.reduce<Promise<Message>>(async (prevMsgPromise, content, index) => {
-                const msg = await prevMsgPromise;
-                return index === 0
-                    ? interaction.editReply({ content })
-                    : msg.reply({ content });
-            }, Promise.resolve(interaction.fetchReply()));
-        } else if (typeof response === 'string') {
-            // If the response is a string, send a single message
-            await interaction.editReply({ content: response });
+        } else {
+            const response = await runGPT(query, interaction.user);
+            await handleGPTResponse(response, interaction, client);
         }
     }
 }
