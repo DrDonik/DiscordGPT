@@ -24,7 +24,7 @@ export class Ask {
             required: true,
             type: ApplicationCommandOptionType.String,
             minLength: 4,
-            maxLength: 100,
+            maxLength: 1024,
         })
             query: string,
             interaction: CommandInteraction,
