@@ -17,12 +17,15 @@ export class MessageCreate {
 
     private readonly supportServerInvite?: string;
 
+    private readonly autoReplyChannels: string[];
+
     constructor() {
         this.threadsEnabled = process.env.ENABLE_MESSAGE_THREADS === 'true';
         this.commandUsageChannel = process.env.COMMAND_USAGE_CHANNEL;
         this.allowedServers = process.env.ALLOWED_SERVER_IDS?.split(',').map((id) => id.trim()) || [];
         this.excludedChannels = new Set(process.env.EXCLUDED_CHANNEL_IDS?.split(',').map((id) => id.trim()) || []);
         this.supportServerInvite = process.env.SUPPORT_SERVER_INVITE;
+        this.autoReplyChannels = process.env.AUTO_REPLY_CHANNEL_IDS?.split(',') ?? [];
     }
 
     /**
@@ -103,9 +106,8 @@ export class MessageCreate {
     private shouldRespond(message: Message, client: Client): boolean {
         if (this.excludedChannels.has(message.channel.id)) return false;
 
-            if (!autoReplyChannels.includes(message.channel.id)) {
-                if (message.mentions.users.size > 0 && !message.mentions.users.has(client.user!.id)) return false;
-            }
+        if (this.autoReplyChannels.includes(message.channel.id)) return true;
+
         if (message.mentions.users.size > 0 && !message.mentions.users.has(client.user!.id)) return false;
 
         const chance = Math.random();
